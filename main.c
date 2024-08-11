@@ -26,9 +26,9 @@ void draw_grid(void)
             if (n > 0) {
                 char buf[CELL_SIZE_ROWS];
                 int len = sprintf(buf, "%d", n);
-                if (n < 64) wattron(win, COLOR_PAIR(n));
+                wattron(win, COLOR_PAIR(n));
                 mvwprintw(win, CELL_SIZE_ROWS / 2, (CELL_SIZE_COLS - len) / 2, "%s", buf);
-                if (n < 64) wattroff(win, COLOR_PAIR(n));
+                wattroff(win, COLOR_PAIR(n));
             }            refresh();
             wrefresh(win);
         }
@@ -55,14 +55,54 @@ void add_randoms(void)
         }
     }
 
-    for (int i = 2; i-- && count > 0;) {
+    for (int i = (rand() % 2) + 1; i-- && count > 0;) {
         int n = rand() % count;
-        grid[open_cells[n][0]][open_cells[n][1]] = (rand() & 1) + 1;
+        grid[open_cells[n][0]][open_cells[n][1]] = 2;
 
         count--;
         open_cells[n][0] = open_cells[count][0];
         open_cells[n][1] = open_cells[count][1];
     }
+}
+
+bool check_valid(void)
+{
+    for (int r = 4; r-- > 0;) {
+        for (int c = 4; c-- > 0;) {
+            if (!grid[r][c]) return true;
+            if (r >= 1 && grid[r][c] == grid[r - 1][c]) return true;
+            if (r < 3 && grid[r][c] == grid[r + 1][c]) return true;
+            if (c >= 1 && grid[r][c] == grid[r][c - 1]) return true;
+            if (c < 3 && grid[r][c] == grid[r][c + 1]) return true;
+        }
+    }
+    return false;
+}
+
+bool check_win(void)
+{
+    for (int r = 4; r-- > 0;) {
+        for (int c = 4; c-- > 0;) {
+            if (grid[r][c] >= 64) return true;
+        }
+    }
+    return false;
+}
+
+void die(void)
+{
+    attron(COLOR_PAIR(2));
+    char str[100] = " Game Over. Press any key to close ";
+    mvprintw(LINES / 2 - 1, COLS / 2 - strlen(str) / 2, "%s", str);
+    attroff(COLOR_PAIR(2));
+}
+
+void win(void)
+{
+    attron(COLOR_PAIR(8));
+    char str[100] = " You Win. Press any key to close or 'g' to keep going ";
+    mvprintw(LINES / 2 - 1, COLS / 2 - strlen(str) / 2, "%s", str);
+    attroff(COLOR_PAIR(8));
 }
 
 bool compacted[4][4] = { 0 };
@@ -172,18 +212,45 @@ int main(void)
     srand(time(NULL));
 
     start_color();
-	init_pair(1,  COLOR_RED, COLOR_BLACK);
-	init_pair(2,  COLOR_YELLOW, COLOR_BLACK);
-	init_pair(4,  COLOR_GREEN, COLOR_BLACK);
-	init_pair(8,  COLOR_BLUE, COLOR_BLACK);
-	init_pair(16, COLOR_CYAN, COLOR_BLACK);
-	init_pair(32, COLOR_MAGENTA, COLOR_BLACK);
+	init_pair(2,  COLOR_RED, COLOR_BLACK);
+	init_pair(4,  COLOR_YELLOW, COLOR_BLACK);
+	init_pair(8,  COLOR_GREEN, COLOR_BLACK);
+	init_pair(16,  COLOR_BLUE, COLOR_BLACK);
+	init_pair(32, COLOR_CYAN, COLOR_BLACK);
+	init_pair(64, COLOR_MAGENTA, COLOR_BLACK);
+	init_pair(128, COLOR_RED, COLOR_WHITE);
+	init_pair(256, COLOR_YELLOW, COLOR_WHITE);
+	init_pair(512, COLOR_GREEN, COLOR_WHITE);
+	init_pair(1024, COLOR_BLUE, COLOR_WHITE);
+	init_pair(2048, COLOR_CYAN, COLOR_WHITE);
 
     add_randoms();
     int c;
+    bool dead = false;
+    bool won = false;
+    bool cont = false;
     while (c != 'q') {
+        clear();
         draw_grid();
-        switch (c = getch()) {
+        if (!check_valid()) {
+            die();
+            dead = true;
+        }
+        if (check_win() && !won) {
+            win();
+            won = true;
+        }
+
+        c = getch();
+
+        if (dead) break;
+        if (won && !cont) {
+             if (c != 'g') {
+                 break;
+             }
+             cont = true;
+        }
+        switch (c) {
             case 'c': clear_grid(); break;
             case KEY_UP:
             case KEY_DOWN:

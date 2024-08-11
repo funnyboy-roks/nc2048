@@ -204,10 +204,10 @@ void make_move(move)
 
 int main(void)
 {
-    initscr();                        /* Start curses mode     */
-    raw();                            /* Line buffering disabled  */
-    keypad(stdscr, TRUE);             /* We get F1, F2 etc..    */
-    noecho();                         /* Don't echo() while we do getch */
+    initscr();
+    raw();
+    keypad(stdscr, TRUE);
+    noecho();
     curs_set(0);
     srand(time(NULL));
 
@@ -263,14 +263,7 @@ int main(void)
         }
     }
 
-    // printw("Type any character to see it in bold\n");
-    // ch = getch();
-    // if(ch == KEY_DOWN) {
-    //     mvprintw(0, 0, "Down");
-    // }
-    // refresh();      /* Print it on to the real screen */
-    // getch();      /* Wait for user input */
-    endwin();      /* End curses mode      */
+    endwin();
 
     return 0;
 }
